@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Project Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .upload-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .result-section {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #preview {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>React Project Generator</h1>
+        <div class="upload-section">
+            <h2>Upload Image</h2>
+            <input type="file" id="imageInput" accept="image/*">
+            <button onclick="uploadImage()">Generate React Project</button>
+            <div id="preview"></div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <p>Processing image and generating React project...</p>
+        </div>
+        
+        <div class="result-section" id="result" style="display: none;">
+            <h2>Generated Project</h2>
+            <div id="projectDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        function uploadImage() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            
+            fetch('/upload-image/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').style.display = 'block';
+                
+                const projectDetails = document.getElementById('projectDetails');
+                projectDetails.innerHTML = `
+                    <p><strong>Extracted Text:</strong> ${data.extracted_text}</p>
+                    <p><strong>Project Name:</strong> ${data.project_name}</p>
+                    <p><strong>Project Path:</strong> ${data.project_path}</p>
+                    <button onclick="viewProject('${data.project_name}')">View Project Structure</button>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                alert('Error: ' + error.message);
+            });
+        }
+        
+        function viewProject(projectName) {
+            fetch(`/project/${projectName}`)
+            .then(response => response.json())
+            .then(data => {
+                const projectDetails = document.getElementById('projectDetails');
+                projectDetails.innerHTML += `
+                    <h3>Project Structure:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+        
+        // Preview image
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('preview');
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 100%;">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html> 
