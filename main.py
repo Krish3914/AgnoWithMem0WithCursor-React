@@ -11,7 +11,7 @@ from PIL import Image
 import io
 import base64
 from react_generator import ReactGenerator
-import groq
+from groq import AsyncGroq
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -40,7 +40,7 @@ GENERATED_DIR = Path("generated_projects")
 UPLOAD_DIR.mkdir(exist_ok=True)
 GENERATED_DIR.mkdir(exist_ok=True)
 
-def get_image_description(image_path: Path) -> str:
+async def get_image_description(image_path: Path) -> str:
     """Get a description of the image using Groq API"""
     try:
         # Read and encode image
@@ -48,14 +48,15 @@ def get_image_description(image_path: Path) -> str:
             encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
         
         # Get API key
-        # api_key = os.getenv("GROQ_API_KEY", "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")
-        api_key = os.environ["GROQ_API_KEY"]
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY environment variable is not set")
         
         # Create Groq client
-        client = groq.Client(api_key=api_key)
+        client = AsyncGroq(api_key=api_key)
         
         # Get image description
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
                 {
@@ -83,7 +84,7 @@ async def upload_image(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, buffer)
         
         # Get image description
-        image_description = get_image_description(file_path)
+        image_description = await get_image_description(file_path)
         
         # Generate React project
         project_name = f"react_project_{file.filename.split('.')[0]}"

@@ -1,19 +1,18 @@
 import os
 import json
 from pathlib import Path
-import groq
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
-os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
-
-
 class ReactGenerator:
     def __init__(self):
-        # Get API key from environment variable or use the provided key
+        # Get API key from environment variable
         api_key = os.getenv("GROQ_API_KEY")
-        self.groq_client = groq.Client(api_key=api_key)
+        if not api_key:
+            raise ValueError("GROQ_API_KEY environment variable is not set")
+        self.groq_client = Groq(api_key=api_key)
     
     def generate_react_project(self, requirements: str, project_path: Path) -> dict:
         """
